@@ -1,0 +1,2376 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: StockSense inventory management API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: inventory
+  - name: memory
+  - name: support
+  - name: administration
+paths:
+  /delivery-app/profile:
+    get:
+      operationId: getDeliveryProfile
+      tags: [inventory]
+      responses:
+        "200":
+          description: Current signed-in delivery app profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliveryProfile" }
+    put:
+      operationId: saveDeliveryProfile
+      tags: [inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryProfileInput" }
+      responses:
+        "200":
+          description: Saved profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliveryProfile" }
+  /delivery-app/courier-lookup:
+    get:
+      operationId: lookupRegisteredCourier
+      tags: [inventory]
+      parameters:
+        - in: query
+          name: email
+          required: true
+          schema: { type: string, format: email }
+      responses:
+        "200":
+          description: Registered courier matching verified email; 404 if none
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegisteredCourier" }
+  /delivery-app/tracking:
+    get:
+      operationId: listDeliveryTracking
+      tags: [inventory]
+      responses:
+        "200":
+          description: Only owned or assigned deliveries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DeliveryTracking" }
+  /delivery-app/tracking/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: getDeliveryTracking
+      tags: [inventory]
+      responses:
+        "200":
+          description: Persisted tracking and provider-verified customer response
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliveryTracking" }
+    put:
+      operationId: saveDeliveryRecipient
+      tags: [inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryRecipientInput" }
+      responses:
+        "200":
+          description: Saved recipient; requires customer confirmation for completion
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliveryTracking" }
+  /delivery-app/tracking/{id}/call:
+    post:
+      operationId: callDeliveryCustomer
+      tags: [inventory]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryCallInput" }
+      responses:
+        "200":
+          description: Real paid Retell call initiated; errors never fabricate approval
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliveryTracking" }
+  /delivery-app/voice:
+    get:
+      operationId: getDeliveryVoiceSettings
+      tags: [inventory]
+      responses:
+        "200":
+          description: Existing Retell phone numbers and saved dedicated agent; provider error when unavailable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliveryVoiceSettings" }
+    post:
+      operationId: setupDeliveryVoice
+      tags: [inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryVoiceInput" }
+      responses:
+        "200":
+          description: Dedicated DTMF delivery agent created; no numbers purchased and no calls made
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliveryVoiceSettings" }
+  /delivery-app/support:
+    get:
+      operationId: listDeliverySupport
+      tags: [inventory]
+      responses:
+        "200":
+          description: Persisted support requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DeliverySupport" }
+    post:
+      operationId: createDeliverySupport
+      tags: [inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliverySupportInput" }
+      responses:
+        "201":
+          description: Saved request
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliverySupport" }
+  /delivery-app/support/{id}/messages:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      operationId: createDeliverySupportMessage
+      tags: [inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliverySupportMessageInput" }
+      responses:
+        "201":
+          description: Added to the customer's own ticket conversation; does not change ticket status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliverySupportConversationMessage" }
+  /delivery-app/support/staff:
+    get:
+      operationId: listDeliveryStaffSupport
+      tags: [inventory]
+      responses:
+        "200":
+          description: All customer support tickets; restricted to explicitly authorized support staff
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DeliverySupportStaffTicket" }
+  /delivery-app/support/staff/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    patch:
+      operationId: updateDeliveryStaffSupport
+      tags: [inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliverySupportStaffUpdate" }
+      responses:
+        "200":
+          description: Updated customer reply and ticket status; restricted to explicitly authorized support staff
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliverySupportStaffTicket" }
+  /delivery-app/support/staff-members:
+    get:
+      operationId: listDeliverySupportStaffMembers
+      tags: [inventory]
+      responses:
+        "200":
+          description: Current support-staff roster; restricted to support administrators
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DeliverySupportStaffMember" }
+    post:
+      operationId: addDeliverySupportStaffMember
+      tags: [inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliverySupportStaffMemberInput" }
+      responses:
+        "201":
+          description: Account added to the support-staff roster
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliverySupportStaffMember" }
+  /delivery-app/support/staff-members/{userId}:
+    parameters:
+      - in: path
+        name: userId
+        required: true
+        schema: { type: string, minLength: 1, maxLength: 255 }
+    delete:
+      operationId: removeDeliverySupportStaffMember
+      tags: [inventory]
+      responses:
+        "204":
+          description: Account removed from the support-staff roster
+  /support/access:
+    get:
+      operationId: getStocksenseSupportAccess
+      tags: [support]
+      responses:
+        "200":
+          description: The signed-in account's support application and access state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseSupportAccess" }
+  /support/admin/access:
+    get:
+      operationId: getStocksenseSupportAdminAccess
+      tags: [support]
+      responses:
+        "200":
+          description: Whether the signed-in account matches the configured StockSense administrator
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseSupportAdminAccess" }
+  /support/admin/access-requests:
+    get:
+      operationId: listStocksenseSupportAccessRequests
+      tags: [support]
+      responses:
+        "200":
+          description: StockSense access requests visible to the configured, email-verified administrator
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StocksenseSupportAccessRequest" }
+        "403": { description: Only the configured StockSense administrator can review requests }
+  /support/admin/access-requests/{userId}:
+    patch:
+      operationId: reviewStocksenseSupportAccessRequest
+      tags: [support]
+      parameters:
+        - { in: path, name: userId, required: true, schema: { type: string, minLength: 1, maxLength: 255 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StocksenseSupportAccessReviewInput" }
+      responses:
+        "200":
+          description: Request decision saved; approval authorizes StockSense support only
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseSupportAccessRequest" }
+        "403": { description: Only the configured StockSense administrator can review requests }
+        "404": { description: Access request not found }
+        "409": { description: Request already reviewed or requester profile incomplete }
+  /support/admin/access-requests/{userId}/pause:
+    patch:
+      operationId: setStocksenseSupportAccessPaused
+      tags: [support]
+      parameters:
+        - { in: path, name: userId, required: true, schema: { type: string, minLength: 1, maxLength: 255 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StocksenseSupportAccessPauseInput" }
+      responses:
+        "200":
+          description: StockSense support access pause state saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseSupportAccessRequest" }
+        "403": { description: Only the configured StockSense administrator can change support access }
+        "404": { description: Access request not found }
+        "409": { description: Only accepted support accounts can be paused or reactivated }
+  /support/access-request:
+    post:
+      operationId: requestStocksenseSupportAccess
+      tags: [support]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StocksenseSupportAccessRequestInput" }
+      responses:
+        "200":
+          description: Access request saved; approval is still administrator-controlled
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseSupportAccessRequestResponse" }
+        "502": { description: "The access request was saved, but the administrator email could not be sent" }
+  /admin/access:
+    get:
+      operationId: getStocksenseAdminAccess
+      tags: [administration]
+      responses:
+        "200":
+          description: The signed-in account's Admin request and lifecycle state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseAdminAccess" }
+  /admin/access-request:
+    post:
+      operationId: requestStocksenseAdminAccess
+      tags: [administration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StocksenseAdminAccessRequestInput" }
+      responses:
+        "200":
+          description: Admin access request saved; access remains pending until approved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseAdminAccess" }
+        "403": { description: A verified email or eligible StockSense account is required }
+        "409": { description: This account already has a different StockSense role or Admin state }
+  /admin/accounts:
+    get:
+      operationId: listStocksenseAdminAccounts
+      tags: [administration]
+      responses:
+        "200":
+          description: Admin requests and lifecycle counts visible only to the configured main administrator
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseAdminAccountList" }
+        "403": { description: Only the configured main administrator can view Admin accounts }
+  /admin/accounts/{userId}/review:
+    parameters:
+      - { in: path, name: userId, required: true, schema: { type: string, minLength: 1, maxLength: 255 } }
+    patch:
+      operationId: reviewStocksenseAdminAccount
+      tags: [administration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StocksenseAdminAccessRequestDecision" }
+      responses:
+        "200":
+          description: Admin request reviewed; approval provisions an Owner profile in that account's own workspace
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseAdminAccount" }
+        "403": { description: Only the configured main administrator can review Admin requests }
+        "404": { description: Admin request not found }
+        "409": { description: Request already reviewed or account cannot be safely provisioned }
+  /admin/accounts/{userId}/status:
+    parameters:
+      - { in: path, name: userId, required: true, schema: { type: string, minLength: 1, maxLength: 255 } }
+    patch:
+      operationId: setStocksenseAdminAccountStatus
+      tags: [administration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StocksenseAdminAccountStatusInput" }
+      responses:
+        "200":
+          description: Accepted Admin account activated or deactivated without deleting its workspace
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseAdminAccount" }
+        "403": { description: Only the configured main administrator can change Admin account status }
+        "404": { description: Admin account not found }
+        "409": { description: "Only accepted, non-terminated Admin accounts can change status" }
+  /admin/accounts/{userId}/terminate:
+    parameters:
+      - { in: path, name: userId, required: true, schema: { type: string, minLength: 1, maxLength: 255 } }
+    post:
+      operationId: terminateStocksenseAdminAccount
+      tags: [administration]
+      responses:
+        "200":
+          description: Admin access permanently revoked and retained as a named Terminated record; workspace data is preserved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseAdminAccount" }
+        "403": { description: Only the configured main administrator can terminate Admin access }
+        "404": { description: Admin account not found }
+        "409": { description: "Only accepted, non-terminated Admin accounts can be terminated" }
+  /stocksense/account:
+    get:
+      operationId: getStocksenseAccountStatus
+      tags: [inventory]
+      responses:
+        "200":
+          description: Deletion status for the signed-in account; only owners can permanently delete their account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseAccountStatus" }
+        "401": { description: Sign-in required }
+    delete:
+      operationId: deleteStocksenseAccount
+      tags: [inventory]
+      summary: Permanently delete the signed-in owner's account
+      description: Deletes the owner's StockSense data and memory bank, shared sign-in, and Delivery profile/settings. Retains Delivery-linked operational history and prevents StockSense workspace access. Retries safely resume incomplete provider and storage cleanup.
+      responses:
+        "204": { description: "StockSense data, shared sign-in, and Delivery profile/settings deleted; Delivery-linked operational history retained" }
+        "401": { description: Sign-in required }
+        "403": { description: Only an owner can delete their account }
+        "409": { description: "Deletion is blocked while the configured main administrator remains; prior cleanup steps remain committed if deletion had already started" }
+        "500": { description: Local database cleanup did not complete; retry is safe }
+        "502": { description: "Hindsight, App Storage, or Clerk deletion could not be confirmed; retry to finish" }
+        "503": { description: "Hindsight is not configured or account administrator status could not be verified; no new cleanup steps were run" }
+        "504": { description: Hindsight did not confirm memory deletion; local database cleanup did not start }
+  /support/tickets:
+    get:
+      operationId: listStocksenseSupportTickets
+      tags: [support]
+      responses:
+        "200":
+          description: Tickets owned by the signed-in StockSense owner only
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StocksenseSupportTicket" }
+    post:
+      operationId: createStocksenseSupportTicket
+      tags: [support]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StocksenseSupportTicketInput" }
+      responses:
+        "201":
+          description: Created owner ticket with its initial conversation message
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseSupportTicket" }
+  /support/tickets/{id}/messages:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: integer } }
+    post:
+      operationId: createStocksenseSupportOwnerMessage
+      tags: [support]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StocksenseSupportMessageInput" }
+      responses:
+        "201":
+          description: Appended to the owner's ticket thread without changing its status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseSupportMessage" }
+        "404": { description: Ticket is not owned by the signed-in owner }
+  /support/tickets/{id}/resolve:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: integer } }
+    post:
+      operationId: confirmStocksenseSupportResolved
+      tags: [support]
+      responses:
+        "200":
+          description: Owner-confirmed resolution, recorded exactly once for the assigned staff member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseSupportTicket" }
+        "409": { description: Ticket must be assigned and unresolved before owner confirmation }
+        "404": { description: Ticket is not owned by the signed-in owner }
+  /support/staff/tickets:
+    get:
+      operationId: listStocksenseSupportStaffTickets
+      tags: [support]
+      responses:
+        "200":
+          description: Shared StockSense support queue for approved staff with completed profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StocksenseSupportStaffTicket" }
+        "403": { description: Staff access is not approved }
+        "409": { description: Approved staff profile needs valid contact details }
+  /support/staff/tickets/{id}/claim:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: integer } }
+    post:
+      operationId: claimStocksenseSupportTicket
+      tags: [support]
+      responses:
+        "200":
+          description: Ticket assigned to the authenticated staff member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseSupportStaffTicket" }
+        "409": { description: Ticket was already assigned or is no longer open }
+  /support/staff/tickets/{id}/messages:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: integer } }
+    post:
+      operationId: createStocksenseSupportStaffMessage
+      tags: [support]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StocksenseSupportMessageInput" }
+      responses:
+        "201":
+          description: Appended to the assigned open ticket without changing its status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseSupportMessage" }
+        "403": { description: Only the assigned staff member may reply }
+        "404": { description: Ticket not found }
+  /support/staff/summary:
+    get:
+      operationId: getStocksenseSupportStaffSummary
+      tags: [support]
+      responses:
+        "200":
+          description: Owner-confirmed solved-ticket count for the signed-in staff member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StocksenseSupportStaffSummary" }
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /storefront/settings:
+    get:
+      operationId: getStorefrontSettings
+      tags: [inventory]
+      summary: Get the signed-in seller's storefront settings and fulfillment locations
+      responses:
+        "200":
+          description: Storefront settings and locations owned by the signed-in seller
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StorefrontSettings" }
+    put:
+      operationId: updateStorefrontSettings
+      tags: [inventory]
+      summary: Publish, edit, or unpublish the signed-in seller's storefront
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StorefrontSettingsInput" }
+      responses:
+        "200":
+          description: Saved storefront settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StorefrontSettings" }
+        "409": { description: Storefront URL is already in use }
+  /storefront/builder:
+    get:
+      operationId: getStorefrontBuilder
+      tags: [inventory]
+      summary: Get the signed-in seller's store draft, published design, and locations
+      responses:
+        "200":
+          description: Store builder state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StorefrontBuilder" }
+  /storefront/builder/generate:
+    post:
+      operationId: generateStorefrontDesign
+      tags: [inventory]
+      summary: Generate a validated storefront design draft from a seller prompt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StorefrontDesignPrompt" }
+      responses:
+        "200":
+          description: Suggested design, not yet saved or published
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StorefrontDesign" }
+        "502": { description: Design generation failed }
+  /storefront/builder/generate-hero:
+    post:
+      operationId: generateStorefrontHero
+      tags: [inventory]
+      summary: Generate a hero image for the seller's store draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StorefrontHeroPrompt" }
+      responses:
+        "201":
+          description: Generated image asset
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StorefrontHeroResult" }
+        "502": { description: Image generation failed }
+  /storefront/builder/draft:
+    put:
+      operationId: saveStorefrontDraft
+      tags: [inventory]
+      summary: Save a seller-approved edit to the unpublished storefront draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StorefrontDesign" }
+      responses:
+        "200":
+          description: Saved draft
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StorefrontBuilder" }
+  /storefront/builder/publish:
+    post:
+      operationId: publishStorefront
+      tags: [inventory]
+      summary: Publish the seller-approved storefront draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StorefrontPublishInput" }
+      responses:
+        "200":
+          description: Published storefront
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StorefrontBuilder" }
+        "409": { description: Store URL is already in use }
+  /storefront/analytics:
+    get:
+      operationId: getStorefrontAnalytics
+      tags: [inventory]
+      summary: Read owner-scoped storefront order-request analytics
+      parameters:
+        - in: query
+          name: periodDays
+          schema: { type: integer, minimum: 1, maximum: 36500, default: 30 }
+      responses:
+        "200":
+          description: Order requests and requested value, grouped by currency
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StorefrontAnalytics" }
+  /storefront/assets/upload-url:
+    post:
+      operationId: requestStorefrontAssetUpload
+      tags: [inventory]
+      summary: Request a private upload URL for a storefront image
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StorefrontAssetUploadInput" }
+      responses:
+        "200":
+          description: Presigned upload URL and owner-scoped asset ID
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StorefrontAssetUploadResult" }
+  /storage/assets/{assetId}:
+    parameters:
+      - { in: path, name: assetId, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      operationId: getOwnerStorefrontAsset
+      tags: [inventory]
+      summary: Read a storefront image owned by the signed-in seller
+      responses:
+        "200":
+          description: Image bytes
+          content:
+            image/png: { schema: { type: string, format: binary } }
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        "404": { description: Image not found }
+  /storage/public-objects/{filePath}:
+    parameters:
+      - { in: path, name: filePath, required: true, schema: { type: string } }
+    get:
+      operationId: getPublicStorageObject
+      tags: [inventory]
+      summary: Read a public object-storage asset
+      responses:
+        "200":
+          description: Public object bytes
+          content:
+            application/octet-stream: { schema: { type: string, format: binary } }
+        "404": { description: File not found }
+  /storefronts/{slug}:
+    parameters:
+      - { in: path, name: slug, required: true, schema: { type: string, pattern: "^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])?$" } }
+    get:
+      operationId: getPublicStorefront
+      tags: [inventory]
+      summary: Read a published seller storefront and its live stock
+      responses:
+        "200":
+          description: Public catalog for the requested seller
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicStorefront" }
+        "404": { description: Storefront is not published }
+  /storefronts/{slug}/assets/{assetId}:
+    parameters:
+      - { in: path, name: slug, required: true, schema: { type: string, pattern: "^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])?$" } }
+      - { in: path, name: assetId, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      operationId: getPublicStorefrontAsset
+      tags: [inventory]
+      summary: Read an image referenced by a published storefront
+      responses:
+        "200":
+          description: Public storefront image bytes
+          content:
+            image/png: { schema: { type: string, format: binary } }
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        "404": { description: Image not found }
+  /storefronts/{slug}/orders:
+    parameters:
+      - { in: path, name: slug, required: true, schema: { type: string, pattern: "^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])?$" } }
+    post:
+      operationId: createPublicStorefrontOrder
+      tags: [inventory]
+      summary: Create a delivery operation from an online order request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StorefrontOrderInput" }
+      responses:
+        "201":
+          description: Order saved as a delivery operation for seller review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StorefrontOrderResult" }
+        "400": { description: Order details or quantities are invalid }
+        "404": { description: Storefront is not published }
+        "409": { description: Requested stock is no longer available }
+        "429": { description: Order request limit reached }
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [inventory]
+      summary: Get inventory dashboard totals and recent activity
+      parameters:
+        - in: query
+          name: warehouseId
+          schema: { type: integer }
+        - in: query
+          name: categoryId
+          schema: { type: integer }
+        - in: query
+          name: type
+          schema: { $ref: "#/components/schemas/OperationType" }
+        - in: query
+          name: status
+          schema: { $ref: "#/components/schemas/OperationStatus" }
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /products:
+    get:
+      operationId: listProducts
+      tags: [inventory]
+      summary: Search and filter products
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: categoryId
+          schema: { type: integer }
+        - in: query
+          name: warehouseId
+          schema: { type: integer }
+        - in: query
+          name: stockStatus
+          schema: { type: string, enum: [all, low, out] }
+      responses:
+        "200":
+          description: Product list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Product" }
+    post:
+      operationId: createProduct
+      tags: [inventory]
+      summary: Create a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductInput" }
+      responses:
+        "201":
+          description: Created product
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Product" }
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [inventory]
+      summary: Get one product and its stock by location
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Product" }
+        "404": { description: Product not found }
+    patch:
+      operationId: updateProduct
+      tags: [inventory]
+      summary: Update a product
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductUpdate" }
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Product" }
+    delete:
+      operationId: deleteProduct
+      tags: [inventory]
+      summary: Archive a product with no stock on hand
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Archived }
+        "409": { description: Product still has stock on hand }
+  /products/{id}/archive-with-stock:
+    post:
+      operationId: archiveProductWithStock
+      tags: [inventory]
+      summary: Record stock removal at every location and archive a product
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Stock cleared and product archived }
+        "404": { description: Active product not found }
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [inventory]
+      summary: List product categories
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Category" }
+    post:
+      operationId: createCategory
+      tags: [inventory]
+      summary: Create a product category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryInput" }
+      responses:
+        "201":
+          description: Created category
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+  /categories/{id}:
+    patch:
+      operationId: updateCategory
+      tags: [inventory]
+      summary: Update a category
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryUpdate" }
+      responses:
+        "200":
+          description: Updated category
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+    delete:
+      operationId: deleteCategory
+      tags: [inventory]
+      summary: Delete an unused category
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "409": { description: Category is in use }
+  /warehouses:
+    get:
+      operationId: listWarehouses
+      tags: [inventory]
+      summary: List warehouses
+      responses:
+        "200":
+          description: Warehouses
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Warehouse" }
+    post:
+      operationId: createWarehouse
+      tags: [inventory]
+      summary: Create a warehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WarehouseInput" }
+      responses:
+        "201":
+          description: Created warehouse
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Warehouse" }
+  /warehouses/{id}:
+    patch:
+      operationId: updateWarehouse
+      tags: [inventory]
+      summary: Update a warehouse
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WarehouseUpdate" }
+      responses:
+        "200":
+          description: Updated warehouse
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Warehouse" }
+    delete:
+      operationId: deleteWarehouse
+      tags: [inventory]
+      summary: Delete an unused warehouse
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "409": { description: Warehouse is in use }
+  /locations:
+    get:
+      operationId: listLocations
+      tags: [inventory]
+      summary: List stock locations
+      parameters:
+        - in: query
+          name: warehouseId
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Location" }
+    post:
+      operationId: createLocation
+      tags: [inventory]
+      summary: Create a stock location
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LocationInput" }
+      responses:
+        "201":
+          description: Created location
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Location" }
+  /google-places/config:
+    get:
+      operationId: getGooglePlacesConfig
+      tags: [inventory]
+      summary: Check whether Google place picking is configured
+      responses:
+        "200":
+          description: Availability and browser-restricted Maps JavaScript key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GooglePlacesConfig" }
+  /google-places/suggestions:
+    get:
+      operationId: listGooglePlaceSuggestions
+      tags: [inventory]
+      summary: Search Google Places (minimum three characters)
+      parameters:
+        - { in: query, name: query, required: true, schema: { type: string, minLength: 3, maxLength: 120 } }
+      responses:
+        "200":
+          description: Place predictions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/GooglePlaceSuggestion" }
+        "429": { description: Search limit reached }
+        "503": { description: Google Places unavailable or not configured }
+  /google-places/resolve:
+    post:
+      operationId: resolveGooglePlace
+      tags: [inventory]
+      summary: Resolve a Google place ID or reverse-geocode a chosen pin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GooglePlaceLookup" }
+      responses:
+        "200":
+          description: Resolved location, not yet saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GooglePlaceResult" }
+        "429": { description: Lookup limit reached }
+  /locations/{id}:
+    patch:
+      operationId: updateLocation
+      tags: [inventory]
+      summary: Update a stock location
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LocationUpdate" }
+      responses:
+        "200":
+          description: Updated location
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Location" }
+    delete:
+      operationId: deleteLocation
+      tags: [inventory]
+      summary: Delete an unused location
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "409": { description: Location is in use }
+  /operations:
+    get:
+      operationId: listOperations
+      tags: [inventory]
+      summary: List receipts, deliveries, transfers, and adjustments
+      parameters:
+        - in: query
+          name: type
+          schema: { $ref: "#/components/schemas/OperationType" }
+        - in: query
+          name: status
+          schema: { $ref: "#/components/schemas/OperationStatus" }
+        - in: query
+          name: warehouseId
+          schema: { type: integer }
+        - in: query
+          name: categoryId
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Operations
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Operation" }
+    post:
+      operationId: createOperation
+      tags: [inventory]
+      summary: Create an inventory operation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OperationInput" }
+      responses:
+        "201":
+          description: Created operation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Operation" }
+  /operations/{id}:
+    get:
+      operationId: getOperation
+      tags: [inventory]
+      summary: Get operation details
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Operation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Operation" }
+        "404": { description: Operation not found }
+    patch:
+      operationId: updateOperation
+      tags: [inventory]
+      summary: Edit a draft operation
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OperationUpdate" }
+      responses:
+        "200":
+          description: Updated operation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Operation" }
+    delete:
+      operationId: deleteOperation
+      tags: [inventory]
+      summary: Delete a draft operation
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "409": { description: Only draft operations can be deleted }
+  /operations/{id}/validate:
+    post:
+      operationId: validateOperation
+      tags: [inventory]
+      summary: Complete an operation and update stock
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Completed operation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Operation" }
+        "409": { description: Insufficient stock or operation cannot be completed }
+  /operations/{id}/cancel:
+    post:
+      operationId: cancelOperation
+      tags: [inventory]
+      summary: Cancel an operation that has not been completed
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Canceled operation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Operation" }
+  /operations/{id}/delivery/start:
+    post:
+      operationId: startDelivery
+      tags: [inventory]
+      summary: Assigned courier records when a validated delivery leaves
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Delivery started
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CourierDelivery" }
+        "409": { description: Delivery must be validated and not already started }
+  /operations/{id}/delivery/reach:
+    post:
+      operationId: reachDelivery
+      tags: [inventory]
+      summary: Courier records arrival and sends a one-time code to the customer
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Arrival recorded and the customer OTP sent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CourierDelivery" }
+        "409": { description: "Delivery must be started, have a customer email, and remain incomplete" }
+        "429": { description: Code resend cooldown or send limit reached }
+  /operations/{id}/delivery/complete:
+    post:
+      operationId: completeDelivery
+      tags: [inventory]
+      summary: Assigned courier records when a started delivery reaches its recipient
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryOtpInput" }
+      responses:
+        "200":
+          description: Delivery completed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CourierDelivery" }
+        "409": { description: "Delivery must be started, reached, and not already completed; the code must be current" }
+        "429": { description: Too many incorrect code attempts }
+  /operations/{id}/courier:
+    put:
+      operationId: assignDeliveryCourier
+      tags: [inventory]
+      summary: Owner assigns or removes a courier for a delivery
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryCourierInput" }
+      responses:
+        "200":
+          description: Updated delivery
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Operation" }
+        "404": { description: Verified courier account not found }
+        "409": { description: Delivery already started or not owned by this workspace }
+  /courier/deliveries:
+    get:
+      operationId: listCourierDeliveries
+      tags: [inventory]
+      summary: List only deliveries assigned to the signed-in courier
+      responses:
+        "200":
+          description: Assigned deliveries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CourierDelivery" }
+  /courier/deliveries/{id}:
+    get:
+      operationId: getCourierDelivery
+      tags: [inventory]
+      summary: View an assigned delivery
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Assigned delivery
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CourierDelivery" }
+        "404": { description: Not assigned }
+  /courier/deliveries/{id}/messages:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: integer } }
+    get:
+      operationId: listCourierDeliveryMessages
+      tags: [inventory]
+      summary: Read the chat for an assigned delivery
+      responses:
+        "200":
+          description: Delivery chat messages in chronological order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DeliveryChatMessage" }
+        "404": { description: Delivery is not assigned to this courier }
+    post:
+      operationId: sendCourierDeliveryMessage
+      tags: [inventory]
+      summary: Send a courier message to the customer and email a private chat link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryChatMessageInput" }
+      responses:
+        "200":
+          description: Message saved and customer email notification attempted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliveryChatPostResult" }
+        "404": { description: Delivery is not assigned to this courier }
+        "409": { description: The delivery chat is closed }
+  /delivery-chat:
+    get:
+      operationId: getCustomerDeliveryChat
+      tags: [inventory]
+      security: []
+      parameters:
+        - in: header
+          name: X-Delivery-Chat-Token
+          required: true
+          schema: { type: string, minLength: 40, maxLength: 100 }
+      responses:
+        "200":
+          description: Private delivery chat thread
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliveryChatThread" }
+        "404": { description: Chat link is invalid or expired }
+    post:
+      operationId: sendCustomerDeliveryMessage
+      tags: [inventory]
+      security: []
+      parameters:
+        - in: header
+          name: X-Delivery-Chat-Token
+          required: true
+          schema: { type: string, minLength: 40, maxLength: 100 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryChatMessageInput" }
+      responses:
+        "201":
+          description: Customer message saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeliveryChatMessage" }
+        "404": { description: Chat link is invalid or expired }
+        "409": { description: Delivery chat is closed }
+  /moves:
+    get:
+      operationId: listMoves
+      tags: [inventory]
+      summary: Browse the stock movement ledger
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: warehouseId
+          schema: { type: integer }
+        - in: query
+          name: productId
+          schema: { type: integer }
+        - in: query
+          name: type
+          schema: { $ref: "#/components/schemas/OperationType" }
+      responses:
+        "200":
+          description: Stock movements
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StockMove" }
+  /memory/recall:
+    post:
+      operationId: recallMemory
+      tags: [memory]
+      summary: Recall memories for the signed-in inventory owner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemoryRecallInput" }
+      responses:
+        "200":
+          description: Matching memories
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemoryRecall" }
+        "400": { description: Invalid or empty query }
+        "401": { description: Sign-in required }
+        "404": { description: Memory bank not found }
+        "502": { description: Hindsight recall failed }
+        "503": { description: Hindsight is not configured }
+        "504": { description: Hindsight did not respond in time }
+components:
+  schemas:
+    StocksenseAdminAccess:
+      type: object
+      required: [isMainAdmin, status, requestStatus, accessStatus, displayName, requestCreatedAt]
+      properties:
+        isMainAdmin: { type: boolean }
+        status: { type: string, enum: [main_admin, none, pending, denied, active, inactive, terminated] }
+        requestStatus: { type: ["string", "null"], enum: [pending, accepted, denied] }
+        accessStatus: { type: ["string", "null"], enum: [active, inactive, terminated] }
+        displayName: { type: ["string", "null"] }
+        requestCreatedAt: { type: ["string", "null"], format: date-time }
+    StocksenseAdminAccessRequestInput:
+      type: object
+      required: [name, phone]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        phone: { type: string, pattern: "^[0-9]{10}$" }
+    StocksenseAdminAccessRequestDecision:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [accepted, denied] }
+    StocksenseAdminAccountStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [active, inactive] }
+    StocksenseAdminAccount:
+      type: object
+      required: [userId, requestedAt, requestStatus, reviewedAt, reviewedByUserId, accessStatus, accessChangedAt, accessChangedByUserId, terminatedAt, terminatedByUserId, displayName, verifiedEmail, phone]
+      properties:
+        userId: { type: string }
+        requestedAt: { type: string, format: date-time }
+        requestStatus: { type: string, enum: [pending, accepted, denied] }
+        reviewedAt: { type: ["string", "null"], format: date-time }
+        reviewedByUserId: { type: ["string", "null"] }
+        accessStatus: { type: ["string", "null"], enum: [active, inactive, terminated] }
+        accessChangedAt: { type: ["string", "null"], format: date-time }
+        accessChangedByUserId: { type: ["string", "null"] }
+        terminatedAt: { type: ["string", "null"], format: date-time }
+        terminatedByUserId: { type: ["string", "null"] }
+        displayName: { type: string }
+        verifiedEmail: { type: string, format: email }
+        phone: { type: string }
+    StocksenseAdminAccountCounts:
+      type: object
+      required: [pending, accepted, denied, active, inactive, terminated]
+      properties:
+        pending: { type: integer, minimum: 0 }
+        accepted: { type: integer, minimum: 0 }
+        denied: { type: integer, minimum: 0 }
+        active: { type: integer, minimum: 0 }
+        inactive: { type: integer, minimum: 0 }
+        terminated: { type: integer, minimum: 0 }
+    StocksenseAdminAccountList:
+      type: object
+      required: [counts, accounts]
+      properties:
+        counts: { $ref: "#/components/schemas/StocksenseAdminAccountCounts" }
+        accounts:
+          type: array
+          items: { $ref: "#/components/schemas/StocksenseAdminAccount" }
+    StocksenseAccountStatus:
+      type: object
+      required: [deleted, canDelete]
+      properties:
+        deleted: { type: boolean }
+        canDelete: { type: boolean }
+    DeliveryRecipientInput:
+      type: object
+      required: [customerPhone, deliveryAddress]
+      properties:
+        customerPhone: { type: string, pattern: "^\\+[1-9][0-9]{7,14}$" }
+        deliveryAddress: { type: string, maxLength: 500 }
+    DeliveryCallInput:
+      type: object
+      required: [consent]
+      properties:
+        consent: { type: boolean }
+    DeliveryVoiceInput:
+      type: object
+      required: [fromNumber]
+      properties:
+        fromNumber: { type: string, pattern: "^\\+[1-9][0-9]{7,14}$" }
+    DeliverySupportInput:
+      type: object
+      required: [subject, message]
+      properties:
+        subject: { type: string, minLength: 1, maxLength: 200 }
+        message: { type: string, minLength: 1, maxLength: 4000 }
+        operationId: { type: ["integer", "null"] }
+    DeliverySupportStaffUpdate:
+      type: object
+      required: [resolution, status]
+      properties:
+        resolution: { type: string, minLength: 1, maxLength: 4000 }
+        status: { type: string, enum: [open, closed] }
+    StocksenseSupportAdminAccess:
+      type: object
+      required: [canReview]
+      properties:
+        canReview: { type: boolean }
+    StocksenseSupportAccess:
+      type: object
+      required: [status, profileComplete, displayName, phone, requestCreatedAt]
+      properties:
+        status: { type: string, enum: [none, pending, approved, denied, paused] }
+        profileComplete: { type: boolean }
+        displayName: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        requestCreatedAt: { type: ["string", "null"], format: date-time }
+    StocksenseSupportAccessRequest:
+      type: object
+      required: [userId, requestedAt, notificationSentAt, status, reviewedAt, reviewedByUserId, pausedAt, pausedByUserId, ticketsReviewed, displayName, verifiedEmail, phone]
+      properties:
+        userId: { type: string }
+        requestedAt: { type: string, format: date-time }
+        notificationSentAt: { type: ["string", "null"], format: date-time }
+        status: { type: string, enum: [pending, approved, denied] }
+        reviewedAt: { type: ["string", "null"], format: date-time }
+        reviewedByUserId: { type: ["string", "null"] }
+        pausedAt: { type: ["string", "null"], format: date-time }
+        pausedByUserId: { type: ["string", "null"] }
+        ticketsReviewed: { type: integer, minimum: 0 }
+        displayName: { type: ["string", "null"] }
+        verifiedEmail: { type: ["string", "null"], format: email }
+        phone: { type: ["string", "null"] }
+    StocksenseSupportAccessReviewInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [approved, denied] }
+    StocksenseSupportAccessPauseInput:
+      type: object
+      required: [paused]
+      properties:
+        paused: { type: boolean }
+    StocksenseSupportAccessRequestInput:
+      type: object
+      required: [name, phone]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        phone: { type: string, pattern: "^[0-9]{10}$" }
+    StocksenseSupportAccessRequestResponse:
+      type: object
+      required: [status, profileComplete, displayName, phone, requestCreatedAt, emailNotificationSent]
+      properties:
+        status: { type: string, enum: [pending, approved, denied, paused] }
+        profileComplete: { type: boolean }
+        displayName: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        requestCreatedAt: { type: ["string", "null"], format: date-time }
+        emailNotificationSent: { type: boolean }
+    StocksenseSupportTicketInput:
+      type: object
+      required: [subject, message]
+      properties:
+        subject: { type: string, minLength: 1, maxLength: 200 }
+        message: { type: string, minLength: 1, maxLength: 4000 }
+    StocksenseSupportMessageInput:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 1, maxLength: 4000 }
+    StocksenseSupportMessage:
+      type: object
+      required: [id, sender, message, createdAt]
+      properties:
+        id: { type: integer }
+        sender: { type: string, enum: [customer, staff] }
+        message: { type: string }
+        createdAt: { type: ["string", "null"], format: date-time }
+    StocksenseSupportAssignee:
+      type: object
+      required: [displayName, email]
+      properties:
+        displayName: { type: string }
+        email: { type: string, format: email }
+    StocksenseSupportAssignedStaff:
+      type: object
+      required: [displayName, email, phone]
+      properties:
+        displayName: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+    StocksenseSupportTicket:
+      type: object
+      required: [id, subject, message, status, createdAt, assignedStaff, resolvedByName, resolvedAt, messages]
+      properties:
+        id: { type: integer }
+        subject: { type: string }
+        message: { type: string }
+        status: { type: string, enum: [open, closed] }
+        createdAt: { type: string, format: date-time }
+        assignedStaff: { oneOf: [{ $ref: "#/components/schemas/StocksenseSupportAssignedStaff" }, { type: "null" }] }
+        resolvedByName: { type: ["string", "null"] }
+        resolvedAt: { type: ["string", "null"], format: date-time }
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/StocksenseSupportMessage" }
+    StocksenseSupportStaffTicket:
+      type: object
+      required: [id, subject, message, status, createdAt, assignee, messages]
+      properties:
+        id: { type: integer }
+        subject: { type: string }
+        message: { type: string }
+        status: { type: string, enum: [open, closed] }
+        createdAt: { type: string, format: date-time }
+        assignee: { oneOf: [{ $ref: "#/components/schemas/StocksenseSupportAssignee" }, { type: "null" }] }
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/StocksenseSupportMessage" }
+    StocksenseSupportStaffSummary:
+      type: object
+      required: [solvedCount]
+      properties:
+        solvedCount: { type: integer, minimum: 0 }
+    DeliveryProfile:
+      type: object
+      required: [userId, name, email, phone, role, canManageSupportStaff]
+      properties:
+        userId: { type: string }
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        role: { type: ["string", "null"], enum: [owner, courier, support_staff, null] }
+        canManageSupportStaff: { type: boolean }
+    DeliveryProfileInput:
+      type: object
+      required: [name, phone, role]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        phone: { type: string, minLength: 10, maxLength: 10, pattern: "^[0-9]{10}$", description: "Account contact number: exactly 10 digits without a country code. Separate from customer/provider calling numbers." }
+        role: { type: string, enum: [owner, courier] }
+    RegisteredCourier:
+      type: object
+      required: [name, email, phone]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+    DeliveryTracking:
+      type: object
+      required: [operationId, reference, customerPhone, deliveryAddress, stockValidated, courierEmail, courierName, courierPhone, startedAt, completedAt, approval, callId, callStatus, callError, confirmationRequired]
+      properties:
+        operationId: { type: integer }
+        reference: { type: string }
+        customerPhone: { type: string }
+        deliveryAddress: { type: string }
+        stockValidated: { type: boolean }
+        courierEmail: { type: ["string", "null"] }
+        courierName: { type: ["string", "null"] }
+        courierPhone: { type: ["string", "null"] }
+        startedAt: { type: ["string", "null"], format: date-time }
+        completedAt: { type: ["string", "null"], format: date-time }
+        approval: { type: string, enum: [pending, calling, confirmed, rejected, support, unanswered, failed] }
+        callId: { type: ["string", "null"] }
+        callStatus: { type: ["string", "null"] }
+        callError: { type: ["string", "null"] }
+        confirmationRequired: { type: boolean }
+    DeliveryVoiceSettings:
+      type: object
+      required: [configured, fromNumber, agentId, numbers, providerError]
+      properties:
+        configured: { type: boolean }
+        fromNumber: { type: ["string", "null"] }
+        agentId: { type: ["string", "null"] }
+        numbers:
+          type: array
+          items: { type: string }
+        providerError: { type: ["string", "null"] }
+    DeliverySupport:
+      type: object
+      required: [id, operationId, subject, message, status, resolution, createdAt, resolvedByName, resolvedAt, messages]
+      properties:
+        id: { type: integer }
+        operationId: { type: ["integer", "null"] }
+        subject: { type: string }
+        message: { type: string }
+        status: { type: string, enum: [open, closed] }
+        resolution: { type: string }
+        createdAt: { type: string, format: date-time }
+        resolvedByName: { type: ["string", "null"] }
+        resolvedAt: { type: ["string", "null"], format: date-time }
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/DeliverySupportConversationMessage" }
+    DeliverySupportStaffTicket:
+      type: object
+      required: [id, customerId, operationId, subject, message, status, resolution, createdAt, resolvedByName, resolvedAt, messages]
+      properties:
+        id: { type: integer }
+        customerId: { type: string }
+        operationId: { type: ["integer", "null"] }
+        subject: { type: string }
+        message: { type: string }
+        status: { type: string, enum: [open, closed] }
+        resolution: { type: string }
+        createdAt: { type: string, format: date-time }
+        resolvedByName: { type: ["string", "null"] }
+        resolvedAt: { type: ["string", "null"], format: date-time }
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/DeliverySupportConversationMessage" }
+    DeliverySupportStaffMemberInput:
+      type: object
+      required: [userId]
+      properties:
+        userId: { type: string, minLength: 1, maxLength: 255 }
+    DeliverySupportStaffMember:
+      type: object
+      required: [userId, addedBy, createdAt]
+      properties:
+        userId: { type: string }
+        addedBy: { type: string }
+        createdAt: { type: string, format: date-time }
+    DeliverySupportConversationMessage:
+      type: object
+      required: [id, sender, message, createdAt]
+      properties:
+        id: { type: integer }
+        sender: { type: string, enum: [customer, staff] }
+        message: { type: string }
+        createdAt: { type: ["string", "null"], format: date-time }
+    DeliverySupportMessageInput:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 1, maxLength: 4000 }
+    HealthStatus:
+      type: object
+      properties:
+        status: { type: string }
+      required: [status]
+    MemoryRecallInput:
+      type: object
+      properties:
+        query: { type: string, minLength: 1, maxLength: 500 }
+      required: [query]
+    MemoryRecallItem:
+      type: object
+      properties:
+        id: { type: string }
+        text: { type: string }
+      required: [id, text]
+    MemoryRecall:
+      type: object
+      properties:
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/MemoryRecallItem" }
+      required: [results]
+    OperationType:
+      type: string
+      enum: [receipt, delivery, transfer, adjustment]
+    OperationStatus:
+      type: string
+      enum: [draft, waiting, ready, done, canceled]
+    OperationOrigin:
+      type: string
+      enum: [inventory, storefront]
+    StorefrontFulfillmentLocation:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        warehouseName: { type: string }
+      required: [id, name, warehouseName]
+    StorefrontSettings:
+      type: object
+      properties:
+        slug: { type: ["string", "null"] }
+        fulfillmentLocationId: { type: ["integer", "null"] }
+        locations:
+          type: array
+          items: { $ref: "#/components/schemas/StorefrontFulfillmentLocation" }
+      required: [slug, fulfillmentLocationId, locations]
+    StorefrontSettingsInput:
+      type: object
+      properties:
+        slug:
+          type: ["string", "null"]
+          minLength: 3
+          maxLength: 40
+          pattern: "^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])?$"
+        fulfillmentLocationId: { type: ["integer", "null"] }
+      required: [slug, fulfillmentLocationId]
+    ImageFit:
+      type: object
+      properties:
+        x: { type: number, minimum: 0, maximum: 1 }
+        y: { type: number, minimum: 0, maximum: 1 }
+        zoom: { type: number, minimum: 1, maximum: 3 }
+      required: [x, y, zoom]
+    StorefrontDesign:
+      type: object
+      properties:
+        storeName: { type: string, minLength: 1, maxLength: 80 }
+        tagline: { type: string, maxLength: 120 }
+        description: { type: string, maxLength: 500 }
+        theme: { type: string, enum: [evergreen, ocean, sunrise] }
+        layout: { type: string, enum: [showcase, catalog, editorial] }
+        heroImageAssetId: { type: ["integer", "null"], minimum: 1 }
+        heroImageFit: { $ref: "#/components/schemas/ImageFit" }
+      required: [storeName, tagline, description, theme, layout, heroImageAssetId]
+    StorefrontDesignPrompt:
+      type: object
+      properties:
+        prompt: { type: string, minLength: 8, maxLength: 2000 }
+      required: [prompt]
+    StorefrontHeroPrompt:
+      type: object
+      properties:
+        prompt: { type: string, minLength: 8, maxLength: 1000 }
+      required: [prompt]
+    StorefrontHeroResult:
+      type: object
+      properties:
+        imageAssetId: { type: integer }
+      required: [imageAssetId]
+    StorefrontPublishInput:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 3
+          maxLength: 40
+          pattern: "^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])?$"
+        fulfillmentLocationId: { type: integer, minimum: 1 }
+      required: [slug, fulfillmentLocationId]
+    StorefrontBuilder:
+      type: object
+      properties:
+        slug: { type: ["string", "null"] }
+        fulfillmentLocationId: { type: ["integer", "null"] }
+        locations:
+          type: array
+          items: { $ref: "#/components/schemas/StorefrontFulfillmentLocation" }
+        draftDesign: { anyOf: [{ $ref: "#/components/schemas/StorefrontDesign" }, { type: "null" }] }
+        publishedDesign: { anyOf: [{ $ref: "#/components/schemas/StorefrontDesign" }, { type: "null" }] }
+      required: [slug, fulfillmentLocationId, locations, draftDesign, publishedDesign]
+    StorefrontAssetUploadInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 255 }
+        size: { type: integer, minimum: 1, maximum: 12582912 }
+        contentType: { type: string, enum: [image/png, image/jpeg, image/webp] }
+      required: [name, size, contentType]
+    StorefrontAssetUploadResult:
+      type: object
+      properties:
+        uploadURL: { type: string, format: uri }
+        imageAssetId: { type: integer }
+      required: [uploadURL, imageAssetId]
+    StorefrontCurrencyAnalytics:
+      type: object
+      properties:
+        currencyCode: { type: string, pattern: "^[A-Z]{3}$" }
+        orderCount: { type: integer, minimum: 0 }
+        requestedValue: { type: number, minimum: 0 }
+      required: [currencyCode, orderCount, requestedValue]
+    StorefrontProductAnalytics:
+      type: object
+      properties:
+        productId: { type: integer }
+        productName: { type: string }
+        currencyCode: { type: string, pattern: "^[A-Z]{3}$" }
+        orderCount: { type: integer, minimum: 0 }
+        quantity: { type: number, minimum: 0 }
+        requestedValue: { type: number, minimum: 0 }
+      required: [productId, productName, currencyCode, orderCount, quantity, requestedValue]
+    StorefrontDailyAnalytics:
+      type: object
+      properties:
+        date: { type: string, format: date }
+        orderCount: { type: integer, minimum: 0 }
+      required: [date, orderCount]
+    StorefrontAnalytics:
+      type: object
+      properties:
+        periodDays: { type: integer, minimum: 0, maximum: 36500 }
+        maxPeriodDays: { type: integer, minimum: 0, maximum: 36500 }
+        orderCount: { type: integer, minimum: 0 }
+        pendingReviewCount: { type: integer, minimum: 0 }
+        completedOperationCount: { type: integer, minimum: 0 }
+        canceledOrderCount: { type: integer, minimum: 0 }
+        unpricedOrderCount: { type: integer, minimum: 0 }
+        ordersByCurrency:
+          type: array
+          items: { $ref: "#/components/schemas/StorefrontCurrencyAnalytics" }
+        topProducts:
+          type: array
+          items: { $ref: "#/components/schemas/StorefrontProductAnalytics" }
+        daily:
+          type: array
+          items: { $ref: "#/components/schemas/StorefrontDailyAnalytics" }
+      required: [periodDays, maxPeriodDays, orderCount, pendingReviewCount, completedOperationCount, canceledOrderCount, unpricedOrderCount, ordersByCurrency, topProducts, daily]
+    PublicStorefrontProduct:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        categoryId: { type: ["integer", "null"] }
+        categoryName: { type: ["string", "null"] }
+        unit: { type: string }
+        sellingPrice: { type: ["number", "null"], minimum: 0, maximum: 1000000 }
+        currencyCode: { type: string, pattern: "^[A-Z]{3}$" }
+        imageAssetId: { type: ["integer", "null"] }
+        imageFit: { $ref: "#/components/schemas/ImageFit" }
+        availableStock: { type: number, minimum: 0 }
+        stockStatus: { type: string, enum: [healthy, low, out] }
+      required: [id, name, categoryId, categoryName, unit, sellingPrice, currencyCode, imageAssetId, imageFit, availableStock, stockStatus]
+    PublicStorefront:
+      type: object
+      properties:
+        slug: { type: string }
+        storeName: { type: string }
+        design: { $ref: "#/components/schemas/StorefrontDesign" }
+        categories:
+          type: array
+          items: { $ref: "#/components/schemas/Category" }
+        products:
+          type: array
+          items: { $ref: "#/components/schemas/PublicStorefrontProduct" }
+      required: [slug, storeName, design, categories, products]
+    StorefrontOrderLineInput:
+      type: object
+      properties:
+        productId: { type: integer }
+        quantity: { type: number, exclusiveMinimum: 0, maximum: 100000000 }
+      required: [productId, quantity]
+    StorefrontOrderInput:
+      type: object
+      properties:
+        customerName: { type: string, minLength: 1, maxLength: 120 }
+        customerEmail: { type: string, format: email, maxLength: 254 }
+        customerPhone: { type: string, pattern: "^\\+[1-9][0-9]{7,14}$" }
+        deliveryAddress: { type: string, minLength: 5, maxLength: 500 }
+        lines:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items: { $ref: "#/components/schemas/StorefrontOrderLineInput" }
+      required: [customerName, customerEmail, customerPhone, deliveryAddress, lines]
+    StorefrontOrderResult:
+      type: object
+      properties:
+        reference: { type: string }
+        message: { type: string }
+      required: [reference, message]
+    Category:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        color: { type: string }
+        productCount: { type: integer }
+      required: [id, name, color, productCount]
+    CategoryInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        color: { type: string }
+      required: [name]
+    CategoryUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        color: { type: string }
+    Warehouse:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        code: { type: string }
+        address: { type: ["string", "null"] }
+        locationCount: { type: integer }
+      required: [id, name, code, address, locationCount]
+    WarehouseInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        code: { type: string, minLength: 1 }
+        address: { type: ["string", "null"] }
+      required: [name, code]
+    WarehouseUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        code: { type: string, minLength: 1 }
+        address: { type: ["string", "null"] }
+    Location:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        code: { type: string }
+        warehouseId: { type: integer }
+        warehouseName: { type: string }
+        parentId: { type: ["integer", "null"] }
+        kind: { type: string, enum: [internal, supplier, customer, production] }
+        address: { type: ["string", "null"] }
+        latitude: { type: ["number", "null"], minimum: -90, maximum: 90 }
+        longitude: { type: ["number", "null"], minimum: -180, maximum: 180 }
+        googlePlaceId: { type: ["string", "null"] }
+      required: [id, name, code, warehouseId, warehouseName, parentId, kind, address, latitude, longitude, googlePlaceId]
+    LocationInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        code: { type: string, minLength: 1 }
+        warehouseId: { type: integer }
+        parentId: { type: ["integer", "null"] }
+        kind: { type: string, enum: [internal, supplier, customer, production] }
+        address: { type: ["string", "null"] }
+        latitude: { type: ["number", "null"], minimum: -90, maximum: 90 }
+        longitude: { type: ["number", "null"], minimum: -180, maximum: 180 }
+        googlePlaceId: { type: string, minLength: 1, maxLength: 255, description: "Server resolves the canonical address and coordinates before saving." }
+        googlePin: { $ref: "#/components/schemas/GooglePin" }
+      required: [name, code, warehouseId, kind]
+    LocationUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        code: { type: string, minLength: 1 }
+        parentId: { type: ["integer", "null"] }
+        kind: { type: string, enum: [internal, supplier, customer, production] }
+        address: { type: ["string", "null"] }
+        latitude: { type: ["number", "null"], minimum: -90, maximum: 90 }
+        longitude: { type: ["number", "null"], minimum: -180, maximum: 180 }
+    GooglePin:
+      type: object
+      properties:
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+      required: [latitude, longitude]
+    GooglePlacesConfig:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        browserKey: { type: ["string", "null"] }
+      required: [enabled, browserKey]
+    GooglePlaceSuggestion:
+      type: object
+      properties:
+        placeId: { type: string }
+        text: { type: string }
+      required: [placeId, text]
+    GooglePlaceLookup:
+      type: object
+      properties:
+        placeId: { type: string, minLength: 1, maxLength: 255 }
+        pin: { $ref: "#/components/schemas/GooglePin" }
+    GooglePlaceResult:
+      type: object
+      properties:
+        placeId: { type: string }
+        address: { type: string }
+        latitude: { type: number }
+        longitude: { type: number }
+      required: [placeId, address, latitude, longitude]
+    ProductLocationStock:
+      type: object
+      properties:
+        locationId: { type: integer }
+        locationName: { type: string }
+        warehouseId: { type: integer }
+        warehouseName: { type: string }
+        quantity: { type: number }
+      required: [locationId, locationName, warehouseId, warehouseName, quantity]
+    Product:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        sku: { type: string }
+        categoryId: { type: ["integer", "null"] }
+        imageAssetId: { type: ["integer", "null"] }
+        imageFit: { $ref: "#/components/schemas/ImageFit" }
+        categoryName: { type: ["string", "null"] }
+        defaultLocationId: { type: ["integer", "null"] }
+        defaultLocationName: { type: ["string", "null"] }
+        defaultWarehouseName: { type: ["string", "null"] }
+        unit: { type: string }
+        reorderPoint: { type: number }
+        sellingPriceUsd: { type: ["number", "null"], minimum: 0, maximum: 1000000 }
+        sellingPrice: { type: ["number", "null"], minimum: 0, maximum: 1000000 }
+        currencyCode: { type: string, pattern: "^[A-Z]{3}$" }
+        totalStock: { type: number }
+        stockStatus: { type: string, enum: [healthy, low, out] }
+        locationStocks:
+          type: array
+          items: { $ref: "#/components/schemas/ProductLocationStock" }
+        createdAt: { type: string, format: date-time }
+      required: [id, name, sku, categoryId, categoryName, imageAssetId, imageFit, defaultLocationId, defaultLocationName, defaultWarehouseName, unit, reorderPoint, sellingPriceUsd, sellingPrice, currencyCode, totalStock, stockStatus, locationStocks, createdAt]
+    ProductInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        sku: { type: string, minLength: 1 }
+        categoryId: { type: ["integer", "null"] }
+        imageAssetId: { type: ["integer", "null"] }
+        imageFit: { $ref: "#/components/schemas/ImageFit" }
+        defaultLocationId: { type: ["integer", "null"] }
+        unit: { type: string, minLength: 1 }
+        reorderPoint: { type: number, minimum: 0 }
+        sellingPriceUsd: { type: ["number", "null"], minimum: 0, maximum: 1000000 }
+        sellingPrice: { type: ["number", "null"], minimum: 0, maximum: 1000000 }
+        currencyCode: { type: string, pattern: "^[A-Z]{3}$" }
+        initialStock: { type: number, minimum: 0, maximum: 100000000, default: 0 }
+        initialLocationId: { type: ["integer", "null"] }
+      required: [name, sku, unit]
+    ProductUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        sku: { type: string, minLength: 1 }
+        categoryId: { type: ["integer", "null"] }
+        imageAssetId: { type: ["integer", "null"] }
+        imageFit: { $ref: "#/components/schemas/ImageFit" }
+        defaultLocationId: { type: ["integer", "null"] }
+        unit: { type: string, minLength: 1 }
+        reorderPoint: { type: number, minimum: 0 }
+        sellingPriceUsd: { type: ["number", "null"], minimum: 0, maximum: 1000000 }
+        sellingPrice: { type: ["number", "null"], minimum: 0, maximum: 1000000 }
+        currencyCode: { type: string, pattern: "^[A-Z]{3}$" }
+    OperationLine:
+      type: object
+      properties:
+        id: { type: integer }
+        productId: { type: integer }
+        productName: { type: string }
+        sku: { type: string }
+        unit: { type: string }
+        quantity: { type: number }
+        countedQuantity: { type: ["number", "null"] }
+      required: [id, productId, productName, sku, unit, quantity, countedQuantity]
+    OperationLineInput:
+      type: object
+      properties:
+        productId: { type: integer }
+        quantity: { type: number, minimum: 0 }
+        countedQuantity: { type: ["number", "null"], minimum: 0 }
+      required: [productId]
+    Operation:
+      type: object
+      properties:
+        id: { type: integer }
+        reference: { type: string }
+        type: { $ref: "#/components/schemas/OperationType" }
+        origin: { $ref: "#/components/schemas/OperationOrigin" }
+        status: { $ref: "#/components/schemas/OperationStatus" }
+        contact: { type: ["string", "null"] }
+        customerEmail: { type: ["string", "null"], format: email }
+        contactPhone: { type: ["string", "null"], pattern: "^\\+[1-9][0-9]{7,14}$" }
+        deliveryAddress: { type: ["string", "null"], maxLength: 500 }
+        sourceLocationId: { type: ["integer", "null"] }
+        sourceLocationName: { type: ["string", "null"] }
+        destinationLocationId: { type: ["integer", "null"] }
+        destinationLocationName: { type: ["string", "null"] }
+        scheduledAt: { type: ["string", "null"], format: date-time }
+        courierEmail: { type: ["string", "null"] }
+        courierName: { type: ["string", "null"], description: "Registered name of the courier assigned to this delivery." }
+        courierPhone: { type: ["string", "null"], description: "Registered contact number of the assigned courier." }
+        deliveryStartedAt: { type: ["string", "null"], format: date-time }
+        deliveryReachedAt: { type: ["string", "null"], format: date-time }
+        deliveryCompletedAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/OperationLine" }
+      required: [id, reference, type, origin, status, contact, customerEmail, contactPhone, deliveryAddress, sourceLocationId, sourceLocationName, destinationLocationId, destinationLocationName, scheduledAt, courierEmail, deliveryStartedAt, deliveryReachedAt, deliveryCompletedAt, createdAt, lines]
+    DeliveryCourierInput:
+      type: object
+      properties:
+        email: { type: ["string", "null"], format: email }
+      required: [email]
+    CourierDelivery:
+      type: object
+      properties:
+        id: { type: integer }
+        reference: { type: string }
+        contact: { type: ["string", "null"] }
+        customerEmailMasked: { type: ["string", "null"], description: "Masked customer address used for delivery OTP." }
+        scheduledAt: { type: ["string", "null"], format: date-time }
+        status: { $ref: "#/components/schemas/OperationStatus" }
+        deliveryStartedAt: { type: ["string", "null"], format: date-time }
+        deliveryReachedAt: { type: ["string", "null"], format: date-time }
+        emailOtpSentAt: { type: ["string", "null"], format: date-time }
+        emailOtpExpiresAt: { type: ["string", "null"], format: date-time }
+        deliveryCompletedAt: { type: ["string", "null"], format: date-time }
+      required: [id, reference, contact, customerEmailMasked, scheduledAt, status, deliveryStartedAt, deliveryReachedAt, emailOtpSentAt, emailOtpExpiresAt, deliveryCompletedAt]
+    OperationInput:
+      type: object
+      properties:
+        type: { $ref: "#/components/schemas/OperationType" }
+        status: { $ref: "#/components/schemas/OperationStatus" }
+        contact: { type: ["string", "null"] }
+        customerEmail: { type: ["string", "null"], format: email }
+        contactPhone: { type: ["string", "null"], pattern: "^\\+[1-9][0-9]{7,14}$" }
+        deliveryAddress: { type: string, maxLength: 500 }
+        sourceLocationId: { type: ["integer", "null"] }
+        destinationLocationId: { type: ["integer", "null"] }
+        scheduledAt: { type: ["string", "null"], format: date-time }
+        lines:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/OperationLineInput" }
+      required: [type, lines]
+    OperationUpdate:
+      type: object
+      properties:
+        type: { $ref: "#/components/schemas/OperationType" }
+        status: { $ref: "#/components/schemas/OperationStatus" }
+        contact: { type: ["string", "null"] }
+        customerEmail: { type: ["string", "null"], format: email }
+        contactPhone: { type: ["string", "null"], pattern: "^\\+[1-9][0-9]{7,14}$" }
+        deliveryAddress: { type: string, maxLength: 500 }
+        sourceLocationId: { type: ["integer", "null"] }
+        destinationLocationId: { type: ["integer", "null"] }
+        scheduledAt: { type: ["string", "null"], format: date-time }
+        lines:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/OperationLineInput" }
+    DeliveryOtpInput:
+      type: object
+      properties:
+        otp: { type: string, pattern: "^[0-9]{6}$" }
+      required: [otp]
+    DeliveryChatMessage:
+      type: object
+      properties:
+        id: { type: integer }
+        sender: { type: string, enum: [courier, customer] }
+        message: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, sender, message, createdAt]
+    DeliveryChatMessageInput:
+      type: object
+      properties:
+        message: { type: string, minLength: 1, maxLength: 4000 }
+      required: [message]
+    DeliveryChatPostResult:
+      type: object
+      properties:
+        message: { $ref: "#/components/schemas/DeliveryChatMessage" }
+        emailSent: { type: boolean }
+      required: [message, emailSent]
+    DeliveryChatThread:
+      type: object
+      properties:
+        reference: { type: string }
+        customerName: { type: ["string", "null"] }
+        courierName: { type: ["string", "null"] }
+        closed: { type: boolean }
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/DeliveryChatMessage" }
+      required: [reference, customerName, courierName, closed, messages]
+    StockMoveEffect:
+      type: object
+      properties:
+        locationId: { type: integer }
+        locationName: { type: string }
+        warehouseName: { type: string }
+        side: { type: string, enum: [source, destination] }
+        quantityBefore: { type: number }
+        quantityAdded: { type: number, minimum: 0 }
+        quantityRemoved: { type: number, minimum: 0 }
+        quantityRemaining: { type: number }
+      required: [locationId, locationName, warehouseName, side, quantityBefore, quantityAdded, quantityRemoved, quantityRemaining]
+    StockMove:
+      type: object
+      properties:
+        id: { type: integer }
+        productId: { type: integer }
+        productName: { type: string }
+        productActive: { type: boolean }
+        sku: { type: string }
+        type: { $ref: "#/components/schemas/OperationType" }
+        operationId: { type: ["integer", "null"] }
+        reference: { type: string }
+        sourceLocationName: { type: ["string", "null"] }
+        destinationLocationName: { type: ["string", "null"] }
+        quantity: { type: number }
+        stockEffects:
+          type: array
+          items: { $ref: "#/components/schemas/StockMoveEffect" }
+        movedAt: { type: string, format: date-time }
+      required: [id, productId, productName, productActive, sku, type, operationId, reference, sourceLocationName, destinationLocationName, quantity, stockEffects, movedAt]
+    Dashboard:
+      type: object
+      properties:
+        totalProducts: { type: integer }
+        totalUnits: { type: number }
+        lowStockItems: { type: integer }
+        outOfStockItems: { type: integer }
+        pendingReceipts: { type: integer }
+        pendingDeliveries: { type: integer }
+        scheduledTransfers: { type: integer }
+        recentMoves:
+          type: array
+          items: { $ref: "#/components/schemas/StockMove" }
+        stockByCategory:
+          type: array
+          items: { $ref: "#/components/schemas/CategoryStock" }
+      required: [totalProducts, totalUnits, lowStockItems, outOfStockItems, pendingReceipts, pendingDeliveries, scheduledTransfers, recentMoves, stockByCategory]
+    CategoryStock:
+      type: object
+      properties:
+        categoryId: { type: ["integer", "null"] }
+        categoryName: { type: string }
+        quantity: { type: number }
+      required: [categoryId, categoryName, quantity]

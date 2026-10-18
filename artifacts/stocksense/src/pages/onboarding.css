@@ -1,0 +1,49 @@
+.ob-wrap{min-height:100dvh;background:#f0f5f9;display:flex;flex-direction:column;align-items:center;padding:20px 18px 40px}
+.ob-top{width:100%;max-width:520px;display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
+.ob-top-actions{display:flex;align-items:center;gap:14px}
+.ob-card{width:100%;max-width:520px;padding:clamp(20px,5vw,34px);animation:ob-in .5s cubic-bezier(.2,.8,.2,1) both}
+.ob-title{font:800 clamp(28px,8vw,38px)/1.08 'Syne',sans-serif;letter-spacing:-.055em;margin:10px 0 8px;color:#203248}
+.ob-title-status{font-size:clamp(48px,12vw,68px);line-height:.92;letter-spacing:-.07em;margin:15px 0 20px}
+.ob-title-status.inactive{color:#526176}
+.ob-title-status.terminated{color:#a1483b}
+.ob-lead{margin:0 0 22px;font-size:14px;line-height:1.6;color:#586a7d}
+.ob-roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;border:0;padding:0;margin:0}
+.ob-role{text-align:left;min-height:104px;padding:14px;border-radius:12px;border:1.5px solid #dce4eb;background:#fbfcfd;color:#203248;display:flex;flex-direction:column;gap:6px;transition:border-color .2s,background .2s,transform .2s}
+.ob-role:hover:not(:disabled){border-color:#3f6fd5;transform:translateY(-2px)}
+.ob-role:focus-visible,.ob-link:focus-visible{outline:3px solid #c9785a;outline-offset:3px}
+.ob-role strong{font:700 18px 'Syne',sans-serif;letter-spacing:-.04em}
+.ob-role span{font-size:12px;line-height:1.45;color:#586a7d}
+.ob-role[aria-checked=true]{background:#eaf1fd;border-color:#3f6fd5}
+.ob-role:disabled{opacity:.55}
+.ob-role[aria-checked=true]:disabled{opacity:1}
+.ob-reveal{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .4s ease,opacity .35s ease}
+.ob-reveal.open{grid-template-rows:1fr;opacity:1}
+.ob-reveal>div{overflow:hidden;min-height:0}
+.ob-fields{padding-top:22px;display:grid;gap:16px}
+.ob-hint{font-size:11px;color:#586a7d;margin-top:6px}
+.ob-err{font-size:12px;color:#a34432;margin-top:6px}
+.ob-note{padding:11px 13px;border-radius:9px;background:#fff0d1;color:#7d5412;font-size:12px;line-height:1.5;margin-bottom:16px}
+.ob-alert{padding:12px 14px;border-radius:9px;background:#fbe5dc;color:#a34432;font-size:13px;line-height:1.5;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.ob-submit{width:100%;min-height:50px;font-size:14px;margin-top:4px}
+.ob-link{background:none;border:0;padding:6px 2px;font-size:12px;font-weight:700;color:#2f58b0;text-decoration:underline}
+.ob-skel{height:48px;margin-bottom:12px}
+.ob-support-pending{padding:22px;border:1px solid #dce4eb;border-radius:12px;background:#f5f8fb}
+.ob-support-pending h2{font:700 25px 'Syne',sans-serif;letter-spacing:-.04em;color:#203248;margin:10px 0}
+.ob-support-pending .ob-lead{margin-bottom:18px}
+.ob-role:last-child{grid-column:1/-1;min-height:78px;flex-direction:row;align-items:center;flex-wrap:wrap}
+.ob-role:last-child span{flex:1 1 230px}
+.ob-lifecycle{padding:23px;border:1px solid #d7e2d8;border-radius:13px;background:#f5f8f2}
+.ob-lifecycle .eyebrow{display:flex;align-items:center;gap:7px}
+.ob-lifecycle h2{font:750 26px/1.15 'Syne',sans-serif;letter-spacing:-.045em;color:#203248;margin:12px 0 9px}
+.ob-lifecycle .ob-lead{margin:0 0 15px}
+.ob-lifecycle .ob-hint{margin:0 0 13px}
+.ob-lifecycle.inactive{background:#f2f5f7;border-color:#d4dde4}
+.ob-lifecycle.terminated{background:#f9eeeb;border-color:#ead2ca}
+.ob-active-admin{display:flex;gap:12px;align-items:center;padding:15px;border:1px solid #c8dbca;border-radius:11px;background:#eef5e9;color:#244d43}
+.ob-admin-mark{width:34px;height:34px;display:grid;place-items:center;flex:none;border-radius:9px;background:#d8e8c9}
+.ob-active-admin strong,.ob-active-admin small{display:block}
+.ob-active-admin strong{font:700 14px 'Syne',sans-serif}
+.ob-active-admin small{font-size:11px;line-height:1.45;color:#60796f;margin-top:4px}
+@keyframes ob-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media(max-width:380px){.ob-roles{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.ob-card{animation:none}.ob-reveal,.ob-role{transition:none}}

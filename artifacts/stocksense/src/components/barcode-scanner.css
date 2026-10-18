@@ -1,0 +1,23 @@
+.product-sku-input{display:flex;align-items:stretch;gap:8px;min-width:0}
+.product-sku-input .field{flex:1;min-width:0;width:0}
+.product-sku-input .btn{flex:none;gap:7px;min-height:44px;padding:10px 12px}
+.product-sku-notice{font-size:12px;line-height:1.5;color:#387b62;margin:6px 0 0;overflow-wrap:anywhere}
+.sku-scanner-overlay{position:fixed;inset:0;background:#17283c99;backdrop-filter:blur(4px);z-index:100}
+.sku-scanner-dialog{position:fixed;z-index:101;left:50%;top:50%;transform:translate(-50%,-50%);width:min(480px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow-y:auto;background:#fbfcfd;border:1px solid #dce4eb;border-radius:18px;padding:24px;box-shadow:0 24px 90px #20324833;color:#203248}
+.sku-scanner-dialog:focus{outline:none}
+.sku-scanner-heading{display:flex;align-items:center;gap:12px}
+.sku-scanner-heading h2{font-size:23px;line-height:1.2;margin:5px 0 0;font-weight:800;letter-spacing:-.04em}
+.sku-scanner-heading .icon-btn{margin-left:auto;flex:none}
+.sku-scanner-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:#eaf1fd;color:#3f6fd5;flex:none}
+.sku-scanner-description{color:#586a7d;font-size:13px;line-height:1.6;margin:18px 0}
+.sku-scanner-preview{position:relative;aspect-ratio:4/3;border-radius:12px;background:#182738;overflow:hidden}
+.sku-scanner-preview video{display:block;width:100%;height:100%;object-fit:contain}
+.sku-scanner-guide{position:absolute;inset:26% 8%;border:2px solid #e7f0ff;border-radius:8px;pointer-events:none;box-shadow:0 0 0 200px #13253944}
+.sku-scanner-guide span{position:absolute;top:50%;left:8px;right:8px;height:2px;background:#769ffc;box-shadow:0 0 8px #769ffc}
+.sku-scanner-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;color:#b9cadf;font-size:13px;background:#182738}
+.sku-scanner-status,.sku-scanner-error{font-size:13px;line-height:1.6;margin:14px 0 0}
+.sku-scanner-status{color:#586a7d}
+.sku-scanner-error{color:#a34444;background:#fbe9e7;padding:12px;border-radius:9px}
+.sku-scanner-privacy{font-size:11px;line-height:1.6;color:#6a7d90;margin:12px 0 0}
+.sku-scanner-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:20px}
+@media(max-width:420px){.sku-scanner-dialog{padding:18px}.sku-scanner-heading h2{font-size:21px}}

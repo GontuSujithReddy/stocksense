@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "StockSense"
+description = "An easy-to-use inventory management app for warehouse teams to track products, stock levels, receipts, deliveries, transfers, adjustments, and movement history across locations."
+version = "1.0.0"
+id = "artifacts/stocksense"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19067
+
+[services.development]
+run = "pnpm --filter @workspace/stocksense run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/stocksense", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/stocksense/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19067"
+BASE_PATH = "/"

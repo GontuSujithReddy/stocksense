@@ -1,0 +1,104 @@
+.delivery-customer-page {
+  min-height: 100vh;
+  padding: 0 18px 36px;
+  background: #f4f7fb;
+  color: #263951;
+}
+.delivery-customer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: min(900px, 100%);
+  margin: 0 auto;
+  padding: 20px 0;
+  border-bottom: 1px solid #e1e8f1;
+}
+.delivery-customer-brand { display: flex; align-items: center; gap: 9px; color: #223a58; font: 650 18px/1 Outfit, sans-serif; }
+.delivery-customer-brand-mark {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border-radius: 9px;
+  background: #315fc2;
+  color: #fff;
+  font-size: 16px;
+}
+.delivery-customer-private { display: flex; align-items: center; gap: 6px; color: #55708d; font-size: 12px; }
+.delivery-customer-card {
+  width: min(760px, 100%);
+  margin: 36px auto 0;
+  padding: clamp(18px, 4vw, 32px);
+  border: 1px solid #dfe7f0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 14px 40px #1e35510b;
+}
+.delivery-customer-title { display: flex; align-items: center; gap: 13px; }
+.delivery-customer-icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: none;
+  place-items: center;
+  border-radius: 12px;
+  background: #e9efff;
+  color: #315fc2;
+}
+.delivery-customer-title h1 { margin: 5px 0 0; color: #203650; font: 600 clamp(20px, 3vw, 26px)/1.18 Outfit, sans-serif; }
+.delivery-customer-intro { margin: 18px 0 15px; color: #66788e; font-size: 13px; line-height: 1.55; }
+.delivery-customer-state { margin: 24px 0 0; padding: 14px; border-radius: 9px; background: #f4f7fb; color: #5f7188; font-size: 13px; line-height: 1.5; }
+.delivery-customer-invalid { display: grid; gap: 5px; border: 1px solid #f0d7d2; background: #fff8f6; color: #88534a; }
+.delivery-customer-invalid strong { color: #793c34; }
+.delivery-customer-messages {
+  display: grid;
+  gap: 11px;
+  max-height: min(54vh, 540px);
+  min-height: 180px;
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid #e0e8f2;
+  border-radius: 12px;
+  background: #f7f9fc;
+}
+.delivery-customer-message {
+  max-width: min(88%, 530px);
+  padding: 11px 13px;
+  border: 1px solid #dfe6ef;
+  border-radius: 12px;
+  background: #fff;
+  overflow-wrap: anywhere;
+}
+.delivery-customer-message.is-customer { justify-self: end; border-color: #cbd9f7; background: #edf3ff; }
+.delivery-customer-message.is-courier { justify-self: start; }
+.delivery-customer-message-meta { display: flex; justify-content: space-between; gap: 18px; color: #76859a; font-size: 10px; }
+.delivery-customer-message-meta strong { color: #3a526f; }
+.delivery-customer-message p { margin: 7px 0 0; color: #2c4059; font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
+.delivery-customer-empty { margin: auto; color: #718197; font-size: 13px; text-align: center; }
+.delivery-customer-compose { display: grid; gap: 9px; margin-top: 16px; }
+.delivery-customer-compose label { color: #3b506b; font-size: 12px; font-weight: 600; }
+.delivery-customer-compose textarea {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+  border: 1px solid #d2dce8;
+  border-radius: 10px;
+  padding: 12px;
+  color: #243951;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.delivery-customer-compose textarea:focus { border-color: #4e78ce; box-shadow: 0 0 0 3px #4e78ce20; }
+.delivery-customer-compose .btn { justify-self: end; min-height: 42px; }
+.delivery-customer-error { margin: 0; color: #a34432; font-size: 12px; }
+.delivery-customer-closed { margin-top: 15px; padding: 12px; border-radius: 9px; background: #f1f4f7; color: #63748a; font-size: 12px; line-height: 1.5; }
+.delivery-customer-footnote { display: flex; justify-content: center; align-items: center; gap: 6px; width: min(760px, 100%); margin: 16px auto 0; color: #77879b; font-size: 11px; }
+@media (max-width: 520px) {
+  .delivery-customer-header { align-items: flex-start; }
+  .delivery-customer-private { max-width: 120px; justify-content: flex-end; text-align: right; }
+  .delivery-customer-card { margin-top: 20px; border-radius: 12px; }
+  .delivery-customer-message { max-width: 96%; }
+  .delivery-customer-compose .btn { width: 100%; justify-content: center; }
+}
